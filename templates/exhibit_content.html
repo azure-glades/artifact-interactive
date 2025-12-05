@@ -1,0 +1,16 @@
+{% macro render_exhibit_template(data, template_name) %}
+    {# This macro acts as a central switch to include the correct template file #}
+    {% if template_name == 'minimalist_label.html' %}
+        {% include 'minimalist_label.html' %}
+    {% elif template_name == 'timeline_label.html' %}
+        {% include 'timeline_label.html' %}
+    {% elif template_name == 'gallery_label.html' %}
+        {% include 'gallery_label.html' %}
+    {% else %}
+        <div class="bg-red-100 p-4 rounded-lg text-red-700">
+            Error: Template not found for type '{{ data.template }}'.
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{{ render_exhibit_template(current_exhibit, current_template) }}

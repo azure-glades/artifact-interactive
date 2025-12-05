@@ -76,8 +76,25 @@ def get_label_data(label_id: str) -> dict or None:
         finally:
             conn.close()
 
-# Example usage (uncomment if testing locally):
-# if __name__ == '__main__':
-#     # Note: This requires a Flask app context for init_db, 
-#     # so it's best run via app.py
-#     pass
+def get_all_label_summaries():
+    """Retrieves ID, Project Title, and Template for all stored labels."""
+    conn = get_db_connection()
+    summaries = []
+    if conn:
+        try:
+            rows = conn.execute("SELECT id, data FROM labels ORDER BY created_at DESC").fetchall()
+            
+            for row in rows:
+                data = json.loads(row['data'])
+                # Only return necessary fields for the sidebar
+                summaries.append({
+                    'id': row['id'],
+                    'projectTitle': data.get('projectTitle', 'Untitled Project'),
+                    'template': data.get('template', 'minimalist')
+                })
+            return summaries
+        except Error as e:
+            print(f"Error retrieving all summaries: {e}")
+            return []
+        finally:
+            conn.close()

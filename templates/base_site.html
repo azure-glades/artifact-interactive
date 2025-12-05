@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Exhibit Site | {{ current_exhibit.projectTitle | default('Loading...') }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            width: 100%;
+            height: auto;
+            max-height: 40vh;
+            overflow-y: auto;
+            background-color: #1f2937; /* Dark Gray */
+        }
+        .sidebar-link {
+            transition: all 0.15s ease-in-out;
+        }
+        .sidebar-link:hover {
+            background-color: #374151; /* Darker Gray */
+        }
+        .sidebar-link.active {
+            background-color: #3b82f6; /* Blue 500 */
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Desktop Layout (md and up) */
+        @media (min-width: 768px) {
+            .sidebar {
+                width: 280px;
+                max-height: 100vh;
+                height: 100vh;
+                position: sticky;
+                top: 0;
+            }
+            .main-content {
+                margin-left: 280px;
+            }
+        }
+    </style>
+</head>
+<body class="md:flex">
+
+    <!-- Sidebar (Navigation) -->
+    <div class="sidebar text-white shadow-xl p-4">
+        <h1 class="text-2xl font-extrabold mb-4 border-b border-gray-600 pb-2">Exhibit Hub</h1>
+        
+        <p class="text-sm text-gray-400 mb-4">Go back to <a href="{{ url_for('home') }}" class="text-blue-400 hover:underline">Generator</a></p>
+
+        <nav class="space-y-1">
+            {% if all_exhibits %}
+                {% for exhibit in all_exhibits %}
+                    {% set is_active = exhibit.id == current_exhibit.id %}
+                    <a href="{{ url_for('unified_exhibit_site', label_id=exhibit.id) }}" 
+                       class="sidebar-link block p-3 rounded-lg text-sm {% if is_active %} active {% else %} text-gray-200 hover:bg-gray-700 {% endif %}">
+                        <span class="font-semibold">{{ exhibit.projectTitle }}</span>
+                        <span class="text-xs italic block opacity-75">({{ exhibit.template | title }})</span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-400 p-3 italic">No exhibits saved yet.</p>
+            {% endif %}
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow main-content p-4 md:p-8">
+        {% if current_template %}
+            {% include current_template %}
+        {% else %}
+            <div class="p-8 bg-white rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-gray-800">Welcome to the Unified Exhibit Site</h2>
+                <p class="text-gray-600 mt-2">Please select an exhibit from the sidebar to view its digital label.</p>
+            </div>
+        {% endif %}
+    </main>
+
+</body>
+</html>

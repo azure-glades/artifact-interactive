@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ data.projectTitle }} - Timeline</title>
+    <title>{{ current_exhibit.projectTitle }} - Timeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .timeline-item {
@@ -33,14 +33,14 @@
 <body class="bg-gray-50 min-h-screen p-6 md:p-10">
     <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10">
         <!-- Project Header -->
-        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ data.projectTitle }}</h1>
-        <p class="text-lg text-gray-600 border-b pb-4 mb-8">Curated by {{ data.curator | default('Institution') }}</p>
-        <p class="text-gray-700 mb-10">{{ data.description }}</p>
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ current_exhibit.projectTitle }}</h1>
+        <p class="text-lg text-gray-600 border-b pb-4 mb-8">Curated by {{ current_exhibit.curator | default('Institution') }}</p>
+        <p class="text-gray-700 mb-10">{{ current_exhibit.description }}</p>
 
         <!-- Timeline -->
         <div class="space-y-12">
-            {% if data.exhibits and data.exhibits|length > 0 %}
-                {% for exhibit in data.exhibits %}
+            {% if current_exhibit.exhibits and current_exhibit.exhibits|length > 0 %}
+                {% for exhibit in current_exhibit.exhibits %}
                     <div class="timeline-item">
                         <div class="timeline-line"></div>
                         <div class="timeline-dot"></div>
