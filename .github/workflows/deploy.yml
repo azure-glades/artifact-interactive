@@ -1,0 +1,46 @@
+name: Deploy Flask App to Civo Compute
+
+on:
+  push:
+    branches:
+      - main # Trigger this workflow whenever a push is made to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # --- 1. Setup SSH Agent ---
+      - name: Setup SSH private key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          # This secret holds the private key you generated (see step 3)
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # --- 2. Remote Deployment Commands ---
+      - name: Pull and Restart App on Civo Instance
+        run: |
+          # The SSH command to connect to your Civo Compute instance
+          # IMPORTANT: Replace <YOUR_CIVO_IP> with the public IP of your instance
+          # We use the 'ubuntu' user, which is standard on Ubuntu images.
+          ssh -o StrictHostKeyChecking=no ubuntu@<YOUR_CIVO_IP> << 'EOF'
+            echo "Deployment started on remote server..."
+            
+            # Navigate to the app directory
+            APP_DIR="/home/ubuntu/flaskapp"
+            cd $APP_DIR
+
+            # Pull the latest code from GitHub
+            git pull origin main
+
+            # Re-install dependencies if requirements.txt has changed
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            # Restart the Gunicorn service to pick up the new code
+            sudo systemctl restart flaskapp
+
+            echo "Deployment finished. Flask app service restarted."
+          EOF
