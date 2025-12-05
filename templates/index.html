@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Exhibit Label Generator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better aesthetics */
+        :root {
+            --primary-color: #3b82f6; /* Blue 500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        .step-active {
+            border-color: var(--primary-color);
+        }
+        .step-active h2 {
+            color: var(--primary-color);
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        input[type="text"], textarea, select {
+            border: 1px solid #e2e8f0;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-extrabold text-gray-900">Digital Exhibit Label Generator</h1>
+            <p class="text-gray-500">Create beautiful, responsive digital labels for your exhibits.</p>
+        </header>
+
+        <!-- Step Navigation / Progress Bar -->
+        <div class="flex justify-between items-start mb-12 text-center">
+            <div id="step-1-nav" class="flex-1 transition duration-300 step-active border-b-4 border-blue-500 pb-2 mx-2">
+                <span class="text-xs font-semibold text-blue-500">STEP 1</span>
+                <h2 class="text-lg font-bold text-blue-500 hidden sm:block">Template & Details</h2>
+            </div>
+            <div id="step-2-nav" class="flex-1 transition duration-300 border-b-4 border-gray-300 pb-2 mx-2">
+                <span class="text-xs font-semibold text-gray-500">STEP 2</span>
+                <h2 class="text-lg font-bold text-gray-500 hidden sm:block">Add Exhibits</h2>
+            </div>
+            <div id="step-3-nav" class="flex-1 transition duration-300 border-b-4 border-gray-300 pb-2 mx-2">
+                <span class="text-xs font-semibold text-gray-500">STEP 3</span>
+                <h2 class="text-lg font-bold text-gray-500 hidden sm:block">Generate Link</h2>
+            </div>
+        </div>
+
+        <!-- Main Form Area -->
+        <div id="content-container" class="bg-white p-6 md:p-10 rounded-xl card transition duration-500">
+
+            <!-- STEP 1: Template Selection & Project Details -->
+            <section id="step-1" class="step">
+                <h3 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-3">Project and Template Setup</h3>
+
+                <!-- Template Selection -->
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">1. Choose Template Format</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button type="button" data-template="minimalist" class="template-btn p-4 border-2 border-blue-500 bg-blue-50 text-blue-800 rounded-lg transition hover:bg-blue-100">
+                            <span class="block font-bold">Minimalist Display</span>
+                            <span class="text-sm">Clean, focused text and one main media item.</span>
+                        </button>
+                        <button type="button" data-template="timeline" class="template-btn p-4 border-2 border-gray-200 text-gray-700 rounded-lg transition hover:bg-gray-50">
+                            <span class="block font-bold">Historical Timeline</span>
+                            <span class="text-sm">Great for sequential or date-driven exhibits.</span>
+                        </button>
+                        <button type="button" data-template="gallery" class="template-btn p-4 border-2 border-gray-200 text-gray-700 rounded-lg transition hover:bg-gray-50">
+                            <span class="block font-bold">Media Gallery</span>
+                            <span class="text-sm">Focus on multiple images/audio clips per exhibit.</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Project Details Form -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="project-title" class="block text-sm font-medium text-gray-700">2. Project Title</label>
+                        <input type="text" id="project-title" class="mt-1 block w-full rounded-md p-3" placeholder="e.g., 'The History of Flight'" required>
+                    </div>
+                    <div>
+                        <label for="curator" class="block text-sm font-medium text-gray-700">3. Curator/Institution Name</label>
+                        <input type="text" id="curator" class="mt-1 block w-full rounded-md p-3" placeholder="e.g., 'City Museum of Arts'" required>
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">4. Project Overview/Introduction</label>
+                        <textarea id="description" rows="3" class="mt-1 block w-full rounded-md p-3" placeholder="A brief introduction for the main landing page." required></textarea>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end">
+                    <button id="next-to-exhibits" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                        Continue to Exhibits →
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 2: Exhibit Management -->
+            <section id="step-2" class="step hidden">
+                <h3 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-3">Exhibit Management</h3>
+
+                <!-- List of Current Exhibits -->
+                <div id="exhibit-list" class="space-y-4 mb-8">
+                    <p id="no-exhibits" class="text-gray-500 italic">No exhibits added yet. Click 'Add New Exhibit' below.</p>
+                </div>
+
+                <!-- Add New Exhibit Button -->
+                <button id="add-exhibit-btn" class="w-full text-center border-2 border-dashed border-gray-300 text-gray-600 py-4 rounded-lg hover:bg-gray-50 transition duration-150 mb-8">
+                    + Add New Exhibit
+                </button>
+
+                <!-- Exhibit Modal/Form (Hidden by Default) -->
+                <div id="exhibit-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto p-4 flex items-start justify-center">
+                    <div class="bg-white rounded-xl card w-full max-w-2xl p-6 md:p-8 mt-10">
+                        <h4 class="text-xl font-bold mb-4 border-b pb-3">Exhibit Details</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="exhibit-title" class="block text-sm font-medium text-gray-700">Exhibit Title</label>
+                                <input type="text" id="exhibit-title" class="mt-1 block w-full rounded-md p-3" placeholder="e.g., 'Artifact 401: Saturn V Engine'">
+                            </div>
+                            <div>
+                                <label for="exhibit-date" class="block text-sm font-medium text-gray-700">Date/Year (Optional)</label>
+                                <input type="text" id="exhibit-date" class="mt-1 block w-full rounded-md p-3" placeholder="e.g., 1969 or 1500 BC">
+                            </div>
+                            <div>
+                                <label for="exhibit-description" class="block text-sm font-medium text-gray-700">Description/Label Text</label>
+                                <textarea id="exhibit-description" rows="4" class="mt-1 block w-full rounded-md p-3" placeholder="The main text for the digital label."></textarea>
+                            </div>
+                            <!-- Media Selection -->
+                            <div class="pt-4 border-t mt-4">
+                                <label for="media-type" class="block text-sm font-medium text-gray-700 mb-2">Exhibit Media</label>
+                                <select id="media-type" class="block w-full rounded-md p-3 mb-4">
+                                    <option value="image">Image</option>
+                                    <option value="audio">Audio</option>
+                                    <option value="none">No Media</option>
+                                </select>
+                                <input type="text" id="media-url" class="mt-1 block w-full rounded-md p-3" placeholder="Enter URL for image or audio file (e.g., https://placehold.co/400x300)">
+                                <p class="text-xs text-gray-500 mt-1">Note: In a real Flask app, this would be a file upload, but we use a URL placeholder here.</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-between">
+                            <button id="close-modal-btn" class="text-gray-600 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition duration-150">
+                                Cancel
+                            </button>
+                            <button id="save-exhibit-btn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
+                                Save Exhibit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Exhibit Modal -->
+
+
+                <div class="mt-8 flex justify-between">
+                    <button id="back-to-details" class="text-gray-600 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition duration-150">
+                        ← Back
+                    </button>
+                    <button id="next-to-data" class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                        Review & Generate →
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 3: Final Data Review & Submission -->
+            <section id="step-3" class="step hidden">
+                <h3 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-3">Review & Generate</h3>
+
+                <p class="mb-4 text-gray-600">Review the final JSON data before submitting it to the backend for storage and link generation.</p>
+
+                <pre id="final-data-output" class="bg-gray-800 text-green-300 p-4 rounded-lg text-sm overflow-x-auto min-h-[300px]">
+                </pre>
+                
+                <div id="submission-status" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+
+                <div class="mt-8 flex justify-between">
+                    <button id="back-to-exhibits" class="text-gray-600 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition duration-150">
+                        ← Back to Exhibits
+                    </button>
+                    <button id="generate-label-btn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-150 shadow-md flex items-center">
+                        <span id="button-text">Generate Digital Label</span>
+                        <div id="button-loader" class="loader ml-2 hidden"></div>
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Core Application State ---
+        let state = {
+            currentStep: 1,
+            data: {
+                template: 'minimalist',
+                projectTitle: '',
+                curator: '',
+                description: '',
+                exhibits: []
+            },
+            editingExhibitIndex: null
+        };
+
+        // --- DOM Elements ---
+        const app = document.getElementById('app');
+        const finalDataOutput = document.getElementById('final-data-output');
+        const exhibitList = document.getElementById('exhibit-list');
+        const noExhibits = document.getElementById('no-exhibits');
+        const generateLabelBtn = document.getElementById('generate-label-btn');
+        const submissionStatus = document.getElementById('submission-status');
+        const buttonText = document.getElementById('button-text');
+        const buttonLoader = document.getElementById('button-loader');
+
+        // --- Utility Functions ---
+
+        /**
+         * Updates the UI state of the submission button (loading indicator).
+         * @param {boolean} isLoading 
+         */
+        function setButtonLoading(isLoading) {
+            generateLabelBtn.disabled = isLoading;
+            if (isLoading) {
+                buttonText.textContent = 'Generating...';
+                buttonLoader.classList.remove('hidden');
+            } else {
+                buttonText.textContent = 'Generate Digital Label';
+                buttonLoader.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Renders the current step content and updates the navigation bar.
+         */
+        function renderStep() {
+            // 1. Update Navigation Bar
+            document.querySelectorAll('[id^="step-"]').forEach(el => {
+                const stepNum = parseInt(el.id.match(/\d/)[0]);
+                const navEl = document.getElementById(`step-${stepNum}-nav`);
+                navEl.classList.remove('step-active', 'border-blue-500');
+                navEl.classList.add('border-gray-300');
+                navEl.querySelector('span').classList.remove('text-blue-500');
+                navEl.querySelector('h2').classList.remove('text-blue-500');
+            });
+            const currentNav = document.getElementById(`step-${state.currentStep}-nav`);
+            if (currentNav) {
+                currentNav.classList.add('step-active', 'border-blue-500');
+                currentNav.classList.remove('border-gray-300');
+                currentNav.querySelector('span').classList.add('text-blue-500');
+                currentNav.querySelector('h2').classList.add('text-blue-500');
+            }
+
+            // 2. Hide/Show Content Sections
+            document.querySelectorAll('.step').forEach(section => section.classList.add('hidden'));
+            document.getElementById(`step-${state.currentStep}`).classList.remove('hidden');
+
+            // 3. Perform step-specific updates
+            if (state.currentStep === 2) {
+                renderExhibitList();
+            } else if (state.currentStep === 3) {
+                generateFinalData();
+                submissionStatus.classList.add('hidden'); // Clear status on view
+            }
+        }
+
+        /**
+         * Renders the list of current exhibits in Step 2.
+         */
+        function renderExhibitList() {
+            exhibitList.innerHTML = '';
+            if (state.data.exhibits.length === 0) {
+                noExhibits.classList.remove('hidden');
+            } else {
+                noExhibits.classList.add('hidden');
+                state.data.exhibits.forEach((exhibit, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg transition hover:bg-gray-100';
+                    item.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${exhibit.title || 'Untitled Exhibit'}</p>
+                            <p class="text-sm text-gray-500">${exhibit.mediaType.toUpperCase()} | ${exhibit.date || 'No Date'}</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button data-index="${index}" class="edit-exhibit-btn text-blue-600 hover:text-blue-800 font-medium text-sm">Edit</button>
+                            <button data-index="${index}" class="delete-exhibit-btn text-red-600 hover:text-red-800 font-medium text-sm">Delete</button>
+                        </div>
+                    `;
+                    exhibitList.appendChild(item);
+                });
+            }
+        }
+
+        /**
+         * Generates and displays the final JSON data.
+         */
+        function generateFinalData() {
+            // Collect latest data from Step 1 inputs before generating final JSON
+            state.data.projectTitle = document.getElementById('project-title').value;
+            state.data.curator = document.getElementById('curator').value;
+            state.data.description = document.getElementById('description').value;
+
+            const jsonString = JSON.stringify(state.data, null, 4);
+            finalDataOutput.textContent = jsonString;
+        }
+
+        /**
+         * Clears the exhibit modal form fields.
+         */
+        function clearExhibitForm() {
+            document.getElementById('exhibit-title').value = '';
+            document.getElementById('exhibit-date').value = '';
+            document.getElementById('exhibit-description').value = '';
+            document.getElementById('media-type').value = 'image';
+            document.getElementById('media-url').value = '';
+        }
+
+        /**
+         * Submits the final JSON data to the Flask backend API.
+         */
+        async function submitFinalData() {
+            setButtonLoading(true);
+            submissionStatus.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/create_label', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: finalDataOutput.textContent // Send the JSON string directly
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Success: Redirect to the new label URL
+                    submissionStatus.className = 'mt-4 p-3 rounded-lg text-center bg-green-100 text-green-700';
+                    submissionStatus.textContent = 'Success! Redirecting to your label...';
+                    submissionStatus.classList.remove('hidden');
+
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                        window.location.href = result.url;
+                    }, 1000);
+                } else {
+                    // API Error
+                    submissionStatus.className = 'mt-4 p-3 rounded-lg text-center bg-red-100 text-red-700';
+                    submissionStatus.textContent = `Error: ${result.error || 'Failed to save data on server.'}`;
+                    submissionStatus.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Submission failed:', error);
+                submissionStatus.className = 'mt-4 p-3 rounded-lg text-center bg-red-100 text-red-700';
+                submissionStatus.textContent = 'Network error: Could not connect to the server.';
+                submissionStatus.classList.remove('hidden');
+            } finally {
+                setButtonLoading(false);
+            }
+        }
+
+        // --- Event Handlers ---
+
+        // Step 1: Template Selection
+        document.querySelectorAll('.template-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Reset all buttons
+                document.querySelectorAll('.template-btn').forEach(btn => {
+                    btn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-800');
+                    btn.classList.add('border-gray-200', 'text-gray-700');
+                });
+                // Activate clicked button
+                e.currentTarget.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-800');
+                e.currentTarget.classList.remove('border-gray-200', 'text-gray-700');
+
+                state.data.template = e.currentTarget.getAttribute('data-template');
+            });
+        });
+
+        // Step 1 -> Step 2 transition
+        document.getElementById('next-to-exhibits').addEventListener('click', () => {
+            const titleInput = document.getElementById('project-title');
+            const curatorInput = document.getElementById('curator');
+            const descriptionInput = document.getElementById('description');
+
+            if (titleInput.value && curatorInput.value && descriptionInput.value) {
+
+                // Save data from step 1
+                state.data.projectTitle = titleInput.value;
+                state.data.curator = curatorInput.value;
+                state.data.description = descriptionInput.value;
+
+                state.currentStep = 2;
+                renderStep();
+            } else {
+                // NOTE: Using a non-blocking temporary message instead of alert()
+                console.error("Please fill in all required project details before continuing.");
+                // For user experience, a simple alert is used here for immediate feedback, 
+                // though a custom modal is better practice.
+                alert("Please fill in all required project details before continuing.");
+            }
+        });
+
+        // Step 2 -> Step 1 transition
+        document.getElementById('back-to-details').addEventListener('click', () => {
+            state.currentStep = 1;
+            renderStep();
+        });
+
+        // Step 2 -> Step 3 transition
+        document.getElementById('next-to-data').addEventListener('click', () => {
+            state.currentStep = 3;
+            renderStep();
+        });
+
+        // Step 3 -> Step 2 transition
+        document.getElementById('back-to-exhibits').addEventListener('click', () => {
+            state.currentStep = 2;
+            renderStep();
+        });
+
+        // Step 3: Submission Handler
+        generateLabelBtn.addEventListener('click', submitFinalData);
+
+
+        // --- Exhibit Modal Management ---
+
+        // Open Modal (Add New Exhibit)
+        document.getElementById('add-exhibit-btn').addEventListener('click', () => {
+            state.editingExhibitIndex = null;
+            clearExhibitForm();
+            document.getElementById('exhibit-modal').classList.remove('hidden');
+        });
+
+        // Close Modal
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            document.getElementById('exhibit-modal').classList.add('hidden');
+            clearExhibitForm();
+        });
+
+        // Save Exhibit
+        document.getElementById('save-exhibit-btn').addEventListener('click', () => {
+            const newExhibit = {
+                title: document.getElementById('exhibit-title').value || 'Untitled Exhibit',
+                date: document.getElementById('exhibit-date').value,
+                description: document.getElementById('exhibit-description').value,
+                mediaType: document.getElementById('media-type').value,
+                mediaUrl: document.getElementById('media-url').value,
+                // Using crypto.randomUUID for a unique ID, good practice for database insertion
+                id: state.editingExhibitIndex === null ? crypto.randomUUID() : state.data.exhibits[state.editingExhibitIndex].id
+            };
+
+            // Basic validation
+            if (!newExhibit.title || !newExhibit.description) {
+                alert("Please provide at least a title and a description for the exhibit.");
+                return;
+            }
+
+            if (state.editingExhibitIndex === null) {
+                // Add new
+                state.data.exhibits.push(newExhibit);
+            } else {
+                // Update existing
+                state.data.exhibits[state.editingExhibitIndex] = newExhibit;
+            }
+
+            document.getElementById('exhibit-modal').classList.add('hidden');
+            renderExhibitList();
+        });
+
+        // Delegate listener for Edit/Delete buttons on the exhibit list
+        exhibitList.addEventListener('click', (e) => {
+            const index = e.target.getAttribute('data-index');
+            if (e.target.classList.contains('edit-exhibit-btn')) {
+                const exhibit = state.data.exhibits[index];
+                state.editingExhibitIndex = index;
+
+                // Populate form
+                document.getElementById('exhibit-title').value = exhibit.title;
+                document.getElementById('exhibit-date').value = exhibit.date;
+                document.getElementById('exhibit-description').value = exhibit.description;
+                document.getElementById('media-type').value = exhibit.mediaType;
+                document.getElementById('media-url').value = exhibit.mediaUrl;
+
+                document.getElementById('exhibit-modal').classList.remove('hidden');
+            } else if (e.target.classList.contains('delete-exhibit-btn')) {
+                // Custom confirmation logic instead of window.confirm
+                if (confirm(`Are you sure you want to delete exhibit: ${state.data.exhibits[index].title}?`)) {
+                    state.data.exhibits.splice(index, 1);
+                    renderExhibitList();
+                }
+            }
+        });
+
+        // Initial render
+        renderStep();
+    </script>
+</body>
+</html>

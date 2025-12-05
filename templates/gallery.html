@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.projectTitle }} - Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Project Header -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 text-center">
+            <h1 class="text-4xl font-extrabold text-gray-900">{{ data.projectTitle }}</h1>
+            <p class="text-lg text-blue-600 mb-3">A Digital Gallery by {{ data.curator | default('The Curators') }}</p>
+            <p class="text-gray-600 max-w-2xl mx-auto">{{ data.description }}</p>
+        </div>
+
+        <!-- Exhibit Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if data.exhibits and data.exhibits|length > 0 %}
+                {% for exhibit in data.exhibits %}
+                    <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 overflow-hidden">
+                        
+                        <!-- Media Card -->
+                        {% if exhibit.mediaType == 'image' and exhibit.mediaUrl %}
+                            <img src="{{ exhibit.mediaUrl }}" 
+                                 onerror="this.src='https://placehold.co/600x400/333333/ffffff?text=Gallery+Image'"
+                                 alt="{{ exhibit.title }}" 
+                                 class="w-full h-48 object-cover">
+                        {% elif exhibit.mediaType == 'audio' and exhibit.mediaUrl %}
+                            <div class="w-full h-48 flex items-center justify-center bg-gray-200">
+                                <audio controls src="{{ exhibit.mediaUrl }}" class="p-4"></audio>
+                            </div>
+                        {% else %}
+                            <div class="w-full h-48 flex items-center justify-center bg-gray-300 text-gray-700 font-medium">
+                                No Media Provided
+                            </div>
+                        {% endif %}
+
+                        <!-- Details -->
+                        <div class="p-5">
+                            <h2 class="text-xl font-bold text-gray-800 mb-1">{{ exhibit.title }}</h2>
+                            <p class="text-xs font-medium text-gray-500 mb-3">{{ exhibit.date | default('No Date') }}</p>
+                            <p class="text-gray-700 text-sm line-clamp-3">{{ exhibit.description }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="col-span-full text-red-500 italic text-center p-10 bg-white rounded-xl">No exhibits to display in this gallery.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

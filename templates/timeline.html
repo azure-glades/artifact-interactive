@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.projectTitle }} - Timeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .timeline-item {
+            position: relative;
+            padding-left: 1.5rem; /* Space for the line and dot */
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -0.25rem;
+            top: 0.5rem;
+            width: 0.8rem;
+            height: 0.8rem;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #bfdbfe; /* Blue 200 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-6 md:p-10">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10">
+        <!-- Project Header -->
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ data.projectTitle }}</h1>
+        <p class="text-lg text-gray-600 border-b pb-4 mb-8">Curated by {{ data.curator | default('Institution') }}</p>
+        <p class="text-gray-700 mb-10">{{ data.description }}</p>
+
+        <!-- Timeline -->
+        <div class="space-y-12">
+            {% if data.exhibits and data.exhibits|length > 0 %}
+                {% for exhibit in data.exhibits %}
+                    <div class="timeline-item">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-dot"></div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition duration-200">
+                            <span class="text-sm font-bold text-blue-600 block mb-1">{{ exhibit.date | default('Undated') }}</span>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ exhibit.title }}</h3>
+                            
+                            {% if exhibit.mediaType == 'image' and exhibit.mediaUrl %}
+                                <img src="{{ exhibit.mediaUrl }}" 
+                                     onerror="this.src='https://placehold.co/400x200/e0e0e0/333333?text=Image+Placeholder'"
+                                     alt="{{ exhibit.title }}" 
+                                     class="w-full h-40 object-cover rounded-md mb-3">
+                            {% elif exhibit.mediaType == 'audio' and exhibit.mediaUrl %}
+                                <div class="bg-gray-100 p-3 rounded-lg mb-3">
+                                    <audio controls src="{{ exhibit.mediaUrl }}" class="w-full"></audio>
+                                </div>
+                            {% endif %}
+                            
+                            <p class="text-gray-700 text-sm">{{ exhibit.description }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-red-500 italic text-center">No exhibit data available for this timeline.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

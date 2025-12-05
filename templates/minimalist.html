@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.projectTitle }} - Minimalist Label</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl overflow-hidden max-w-lg w-full md:flex">
+        
+        <div class="p-6 md:p-8">
+            <!-- Project Header -->
+            <p class="text-sm font-semibold text-blue-600 mb-2">{{ data.curator | default('Institution') }}</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ data.projectTitle }}</h1>
+            <p class="text-gray-600 mb-6">{{ data.description }}</p>
+
+            {% if data.exhibits and data.exhibits|length > 0 %}
+                {% set main_exhibit = data.exhibits[0] %}
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">{{ main_exhibit.title }}</h2>
+                
+                <!-- Media -->
+                {% if main_exhibit.mediaType == 'image' and main_exhibit.mediaUrl %}
+                    <img src="{{ main_exhibit.mediaUrl }}" 
+                         onerror="this.src='https://placehold.co/400x300/e0e0e0/333333?text=Image+Not+Found'"
+                         alt="{{ main_exhibit.title }}" 
+                         class="w-full h-auto object-cover rounded-lg shadow-md mb-4">
+                {% elif main_exhibit.mediaType == 'audio' and main_exhibit.mediaUrl %}
+                    <div class="bg-gray-100 p-3 rounded-lg mb-4">
+                        <p class="text-gray-700 font-medium mb-2">Audio Narration:</p>
+                        <audio controls src="{{ main_exhibit.mediaUrl }}" class="w-full"></audio>
+                    </div>
+                {% endif %}
+                
+                <!-- Exhibit Details -->
+                <p class="text-sm text-gray-500 mb-3">
+                    {% if main_exhibit.date %}
+                        Date: {{ main_exhibit.date }}
+                    {% endif %}
+                </p>
+                <p class="text-gray-700 leading-relaxed">{{ main_exhibit.description }}</p>
+            {% else %}
+                <p class="text-red-500 italic">No exhibit data available for this label.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
