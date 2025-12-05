@@ -98,3 +98,17 @@ def get_all_label_summaries():
             return []
         finally:
             conn.close()
+
+def delete_label_data(label_id: str) -> bool:
+    """Deletes a label entry based on its ID."""
+    conn = get_db_connection()
+    if conn:
+        try:
+            conn.execute("DELETE FROM labels WHERE id = ?", (label_id,))
+            conn.commit()
+            return True
+        except Error as e:
+            print(f"Error deleting data for ID {label_id}: {e}")
+            return False
+        finally:
+            conn.close()

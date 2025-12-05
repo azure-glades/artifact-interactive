@@ -52,6 +52,27 @@
         
         <p class="text-sm text-gray-400 mb-4">Go back to <a href="{{ url_for('home') }}" class="text-blue-400 hover:underline">Generator</a></p>
 
+        <!-- Current Exhibit Controls -->
+        {% if current_exhibit %}
+        <div class="bg-gray-800 p-3 rounded-lg mb-4">
+            <h3 class="text-lg font-bold text-gray-100 mb-2">Management</h3>
+            <div class="space-y-2">
+                <!-- QR Code Display -->
+                <div class="p-2 bg-white rounded flex flex-col items-center">
+                    <img src="{{ qr_code_image }}" alt="QR Code" class="w-full max-w-[150px] mb-1">
+                    <p class="text-xs text-gray-700">Scan to view this page.</p>
+                </div>
+                
+                <!-- Delete Button -->
+                <button onclick="confirmDelete('{{ current_exhibit.id }}', '{{ current_exhibit.projectTitle }}')"
+                        class="w-full bg-red-600 text-white font-semibold py-2 rounded-lg hover:bg-red-700 transition duration-150 text-sm">
+                    Delete This Exhibit
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <h3 class="text-xl font-bold mb-3 mt-6 border-b border-gray-600 pb-2">All Projects</h3>
         <nav class="space-y-1">
             {% if all_exhibits %}
                 {% for exhibit in all_exhibits %}
@@ -71,6 +92,7 @@
     <!-- Main Content Area -->
     <main class="flex-grow main-content p-4 md:p-8">
         {% if current_template %}
+            {# The previous fix applied to the child templates ensures they now use 'current_exhibit' #}
             {% include current_template %}
         {% else %}
             <div class="p-8 bg-white rounded-xl shadow-lg">
@@ -79,6 +101,36 @@
             </div>
         {% endif %}
     </main>
+    
+    <script>
+        function confirmDelete(labelId, projectTitle) {
+            if (confirm(`Are you sure you want to PERMANENTLY delete the exhibit: "${projectTitle}"? This cannot be undone.`)) {
+                deleteExhibit(labelId);
+            }
+        }
 
+        async function deleteExhibit(labelId) {
+            try {
+                const response = await fetch(`/api/delete_label/${labelId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert(`Exhibit ${labelId} deleted successfully.`);
+                    // Redirect to the home page or a default exhibit
+                    window.location.href = "{{ url_for('home') }}";
+                } else {
+                    const result = await response.json();
+                    alert(`Deletion failed: ${result.error || 'Unknown error.'}`);
+                }
+            } catch (error) {
+                console.error('Network Error during deletion:', error);
+                alert('A network error occurred. Could not delete the exhibit.');
+            }
+        }
+    </script>
 </body>
 </html>

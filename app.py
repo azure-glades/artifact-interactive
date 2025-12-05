@@ -1,8 +1,11 @@
 import uuid
 import json
 import os
+import io
+import base64
+import qrcode
 from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory
-from database import init_db, store_label_data, get_label_data, get_all_label_summaries
+from database import init_db, store_label_data, get_label_data, get_all_label_summaries, delete_label_data
 from werkzeug.utils import secure_filename
 
 # --- Configuration ---
@@ -96,9 +99,47 @@ def create_label():
     except Exception as e:
         print(f"ERROR during label creation: {e}")
         return jsonify({"error": f"Internal server error: {e}"}), 500
+        
+# ----------------------------------------------------
+# 4. Label Deletion
+# ----------------------------------------------------
+@app.route('/api/delete_label/<label_id>', methods=['DELETE'])
+def delete_label(label_id):
+    """Deletes an exhibit label from the database."""
+    success = delete_label_data(label_id)
+    if success:
+        # Note: You might want to also delete the files in the UPLOADS_FOLDER
+        return jsonify({"message": f"Label {label_id} deleted successfully."}), 200
+    else:
+        return jsonify({"error": f"Could not delete label {label_id}."}), 404
 
 # ----------------------------------------------------
-# 4. Unified Site Structure (The New Viewer)
+# 5. QR Code Generation
+# ----------------------------------------------------
+def generate_qrcode_base64(url):
+    """Generates a QR code image as a Base64 string."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Save image to an in-memory buffer
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    
+    # Encode the buffer content as Base64
+    img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    return f"data:image/png;base64,{img_b64}"
+
+
+# ----------------------------------------------------
+# 6. Unified Site Structure (The New Viewer)
 # ----------------------------------------------------
 @app.route('/exhibit/<label_id>')
 def unified_exhibit_site(label_id):
@@ -116,7 +157,11 @@ def unified_exhibit_site(label_id):
     if not label_data:
         return render_template('error_404.html', label_id=label_id), 404
 
-    # 4. Determine which content template to use based on the data
+    # 4. Generate QR Code for the current exhibit URL
+    full_url = url_for('unified_exhibit_site', label_id=label_id, _external=True)
+    qr_code_image = generate_qrcode_base64(full_url)
+
+    # 5. Determine which content template to use based on the data
     template_type = label_data.get('template', 'minimalist')
     
     # Render the base template, which will automatically render the specific content template
@@ -124,7 +169,8 @@ def unified_exhibit_site(label_id):
         'base_site.html',
         all_exhibits=all_exhibits,
         current_exhibit=label_data,
-        current_template=f'{template_type}.html'
+        current_template=f'{template_type}_label.html',
+        qr_code_image=qr_code_image # Pass the Base64 image to the template
     )
 
 @app.errorhandler(404)
