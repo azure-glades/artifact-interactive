@@ -212,6 +212,12 @@
     </div>
 
     <script>
+        // --- Utility: Cross-Browser UUID Generation ---
+        function generateUUID() {
+            // Generates a simple, short unique string using Math.random() as a robust fallback.
+            return Math.random().toString(36).substring(2, 11);
+        }
+
         // --- Core Application State ---
         let state = {
             currentStep: 1,
@@ -223,7 +229,6 @@
                 exhibits: []
             },
             editingExhibitIndex: null,
-            // Temporary storage for file upload URI during modal interaction
             currentMediaUri: '' 
         };
 
@@ -331,7 +336,6 @@
 
         /**
          * Updates the UI state of the submission button (loading indicator).
-         * [rest of setButtonLoading remains the same]
          */
         function setButtonLoading(isLoading) {
             generateLabelBtn.disabled = isLoading;
@@ -346,7 +350,6 @@
 
         /**
          * Renders the current step content and updates the navigation bar.
-         * [rest of renderStep remains the same]
          */
         function renderStep() {
             // 1. Update Navigation Bar
@@ -382,7 +385,6 @@
 
         /**
          * Renders the list of current exhibits in Step 2.
-         * [rest of renderExhibitList remains the same]
          */
         function renderExhibitList() {
             exhibitList.innerHTML = '';
@@ -410,7 +412,6 @@
 
         /**
          * Generates and displays the final JSON data.
-         * [rest of generateFinalData remains the same]
          */
         function generateFinalData() {
             // Collect latest data from Step 1 inputs before generating final JSON
@@ -433,14 +434,63 @@
             state.currentMediaUri = '';
             renderMediaInput();
         }
+        
+        /**
+         * Handles validation, state update, and UI refresh 
+         * when the "Save Exhibit" button is clicked.
+         */
+        function handleSaveExhibit() {
+            const mediaType = mediaTypeSelect.value;
+            
+            // 1. Check if media is required and has been uploaded/attached
+            if ((mediaType === 'image' || mediaType === 'audio') && !state.currentMediaUri) {
+                alert(`Please upload and attach a file for the selected media type (${mediaType}).`);
+                return;
+            }
+
+            const newExhibit = {
+                title: document.getElementById('exhibit-title').value || 'Untitled Exhibit',
+                date: document.getElementById('exhibit-date').value,
+                description: document.getElementById('exhibit-description').value,
+                mediaType: mediaType,
+                mediaUrl: state.currentMediaUri, // Use the stored URI
+                // FIX: Use the stable generateUUID() function instead of crypto.randomUUID()
+                id: state.editingExhibitIndex === null ? generateUUID() : state.data.exhibits[state.editingExhibitIndex].id
+            };
+
+            // 2. Basic validation (title/description)
+            if (!newExhibit.title || !newExhibit.description) {
+                alert("Please provide at least a title and a description for the exhibit.");
+                return;
+            }
+
+            // 3. Update state
+            if (state.editingExhibitIndex === null) {
+                state.data.exhibits.push(newExhibit);
+            } else {
+                state.data.exhibits[state.editingExhibitIndex] = newExhibit;
+            }
+
+            // 4. Close modal and update UI
+            document.getElementById('exhibit-modal').classList.add('hidden');
+            renderExhibitList();
+            state.currentMediaUri = ''; // Clear URI state after saving
+        }
+
 
         /**
          * Submits the final JSON data to the Flask backend API.
-         * [rest of submitFinalData remains the same]
          */
         async function submitFinalData() {
             setButtonLoading(true);
             submissionStatus.classList.add('hidden');
+            
+            // Basic validation check before submission
+            if (state.data.exhibits.length === 0) {
+                 alert("Please add at least one exhibit before generating the digital label.");
+                 setButtonLoading(false);
+                 return;
+            }
 
             try {
                 const response = await fetch('/api/create_label', {
@@ -461,7 +511,7 @@
 
                     // Redirect after a short delay
                     setTimeout(() => {
-                        window.location.href = result.url;
+                        window.location.href = result.url; // result.url will be /exhibit/{id}
                     }, 1000);
                 } else {
                     // API Error
@@ -480,9 +530,9 @@
             }
         }
 
-        // --- Event Handlers (Step 1, Step 2, Step 3 navigation logic remains the same) ---
+        // --- Event Handlers ---
 
-        // ... Step 1 navigation, Step 2 navigation, Step 3 navigation ...
+        // Step 1: Template Selection
         document.querySelectorAll('.template-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 // Reset all buttons
@@ -498,6 +548,7 @@
             });
         });
 
+        // Step 1 -> Step 2 transition
         document.getElementById('next-to-exhibits').addEventListener('click', () => {
             const titleInput = document.getElementById('project-title');
             const curatorInput = document.getElementById('curator');
@@ -515,21 +566,25 @@
             }
         });
 
+        // Step 2 -> Step 1 transition
         document.getElementById('back-to-details').addEventListener('click', () => {
             state.currentStep = 1;
             renderStep();
         });
 
+        // Step 2 -> Step 3 transition
         document.getElementById('next-to-data').addEventListener('click', () => {
             state.currentStep = 3;
             renderStep();
         });
 
+        // Step 3 -> Step 2 transition
         document.getElementById('back-to-exhibits').addEventListener('click', () => {
             state.currentStep = 2;
             renderStep();
         });
 
+        // Step 3: Final Submission
         generateLabelBtn.addEventListener('click', submitFinalData);
 
 
@@ -548,41 +603,9 @@
             clearExhibitForm();
         });
 
-        // Save Exhibit
-        document.getElementById('save-exhibit-btn').addEventListener('click', () => {
-            const mediaType = mediaTypeSelect.value;
-            
-            // Check if media is required and has been uploaded/attached
-            if ((mediaType === 'image' || mediaType === 'audio') && !state.currentMediaUri) {
-                alert(`Please upload and attach a file for the selected media type (${mediaType}).`);
-                return;
-            }
+        // Event Listener for Save button
+        document.getElementById('save-exhibit-btn').addEventListener('click', handleSaveExhibit);
 
-            const newExhibit = {
-                title: document.getElementById('exhibit-title').value || 'Untitled Exhibit',
-                date: document.getElementById('exhibit-date').value,
-                description: document.getElementById('exhibit-description').value,
-                mediaType: mediaType,
-                mediaUrl: state.currentMediaUri, // Use the stored URI
-                id: state.editingExhibitIndex === null ? crypto.randomUUID() : state.data.exhibits[state.editingExhibitIndex].id
-            };
-
-            // Basic validation
-            if (!newExhibit.title || !newExhibit.description) {
-                alert("Please provide at least a title and a description for the exhibit.");
-                return;
-            }
-
-            if (state.editingExhibitIndex === null) {
-                state.data.exhibits.push(newExhibit);
-            } else {
-                state.data.exhibits[state.editingExhibitIndex] = newExhibit;
-            }
-
-            document.getElementById('exhibit-modal').classList.add('hidden');
-            renderExhibitList();
-            state.currentMediaUri = ''; // Clear URI state after saving
-        });
 
         // Delegate listener for Edit/Delete buttons on the exhibit list
         exhibitList.addEventListener('click', (e) => {
