@@ -18,24 +18,24 @@ jobs:
         with:
           # This secret holds the private key you generated (see step 3)
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # --- 2. Remote Deployment Commands ---
+          
+# --- 2. Remote Deployment Commands (FIXED) ---
       - name: Pull and Restart App on Civo Instance
-        run: |
-          # The SSH command to connect to your Civo Compute instance
-          # IMPORTANT: Replace <YOUR_CIVO_IP> with the public IP of your instance
-          # We use the 'ubuntu' user, which is standard on Ubuntu images.
-          ssh -o StrictHostKeyChecking=no ubuntu@212.2.248.120 << 'EOF'
+        uses: appleboy/ssh-action@v1.0.3 # Use a reliable SSH action
+        with:
+          host: 212.2.248.120            # Your Civo Public IP
+          username: ubuntu               # The user you connect as
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Uses the secret key directly
+          script: |
             echo "Deployment started on remote server..."
             
-            # Navigate to the app directory
             APP_DIR="/home/ubuntu/flaskapp"
-            cd $APP_DIR
+            cd $APP_DIR || exit 1 # Exit if directory change fails
 
             # Pull the latest code from GitHub
             git pull origin main
 
-            # Re-install dependencies if requirements.txt has changed
+            # Re-install dependencies (always a good idea in CI/CD)
             source venv/bin/activate
             pip install -r requirements.txt
 
@@ -43,4 +43,3 @@ jobs:
             sudo systemctl restart flaskapp
 
             echo "Deployment finished. Flask app service restarted."
-          EOF
